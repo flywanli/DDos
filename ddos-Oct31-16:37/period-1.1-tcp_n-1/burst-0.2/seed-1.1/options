@@ -1,0 +1,16 @@
+{
+    "burst": 0.2,
+    "bw_host": 15.0,
+    "bw_net": 1.5,
+    "cong": "bic",
+    "debug": false,
+    "delay": 6.0,
+    "dir": "ddos-Oct31-16:37/period-1.1-tcp_n-1/burst-0.2/seed-1.1",
+    "http": false,
+    "iperf": "/usr/bin/iperf",
+    "minRTO": 900.0,
+    "period": 1.1,
+    "rand_seed": 1.1,
+    "rootdir": "ddos-Oct31-16:37",
+    "tcp_n": 1
+}

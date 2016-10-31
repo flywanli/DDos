@@ -28,7 +28,7 @@ ln -s $rootdir last
 minRTO=900
 tcp_n=1
 period=1.1
-burst=0.3
+burst=0.2
 for seed in 0.10 0.20 0.30 0.40 0.50 0.60 0.70 0.80 0.90 1.0 1.1; do
   dir=$rootdir/period-$period-tcp_n-$tcp_n/burst-$burst/seed-$seed
   
