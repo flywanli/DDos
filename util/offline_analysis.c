@@ -37,6 +37,7 @@ void my_callback(u_char *sample_time,const struct pcap_pkthdr* pkthdr,const u_ch
     static double end_time;
     double tmp_time;
     double t;
+    int i;
     //float sample=50/1000.0;
     float sample=atof(sample_time)/1000.0;
     printf("sample %f\n",sample);
@@ -54,20 +55,33 @@ void my_callback(u_char *sample_time,const struct pcap_pkthdr* pkthdr,const u_ch
 			}
 		else
 		{
+			printf("time %f with packets: %d \n",end_time, pkt_count);
+			fprintf(fp,"%d\n",pkt_count);
 			if ((t-end_time)/sample>1.0)
 			{
-				tmp_time=end_time+sample;
-				for (int i=0;i<=(t-tmp_time)/sample;i++)
+				printf("1 number of iterations %f\n",(t-end_time)/sample);
+				tmp_time=end_time;
+				for (i=0;i<=(t-tmp_time)/sample;i++)
 				{
+					//printf("i %d\n",i);
 					pkt_count=0;
-					printf("time %f packets: %d\n", end_time,pkt_count);
 					end_time+=sample;
+					printf("time %f are packets: %d\n", end_time,pkt_count);
+					fprintf(fp,"%d\n",pkt_count);
 					}
+				pkt_count++;
+				end_time+=sample;
+				//printf("after iterations time %f are packets: %d\n", end_time,pkt_count);
 				}
-			printf("time %f packets: %d \n",end_time, pkt_count);
-			//fprintf(fp,"%d\n",pkt_count);
-			pkt_count=1;
-			end_time+=sample;
+				else
+				{
+					printf("2 number of iterations %f\n",(t-end_time)/sample);
+					pkt_count=1;
+					end_time+=sample;
+					//printf("time %f packets: %d \n",end_time, pkt_count);
+					//fprintf(fp,"%d\n",pkt_count);
+					
+				}
 			
 			}
 		
@@ -114,6 +128,14 @@ main(int argc, char **argv)
                 sample_time= argv[3];
         else
                 strcpy(filename, PCAP_SAVEFILE);
+                
+        if ((fp = fopen("result.txt","w")) == NULL) {
+                fprintf(stderr,
+                        "Error opening savefile \"%s\" for writing\n",
+                        filename);
+                fclose(fp);
+                exit(7);
+        }
 
         /*offline reading */
         if(!(p = pcap_open_offline(argv[2], errbuf)))
