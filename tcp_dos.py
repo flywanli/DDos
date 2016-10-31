@@ -151,6 +151,13 @@ parser.add_argument('--debug',
                     action='store_true',
                     default=False,
                     help="Print debug messages")
+                    
+parser.add_argument('--randseed', '-r',
+                    dest="rand_seed",
+                    type=float,
+                    action="store",
+                    help="Random seed",
+                    required=True)
 
 # Expt parameters
 args = parser.parse_args()
@@ -165,6 +172,7 @@ if not os.path.exists(args.dir):
   opt.close()
 
 # Topology to be instantiated in Mininet
+'''
 class NetworkTopo(Topo):
   def __init__(self, switch_bw, switch_delay, host_bw, queue_size):
     # Add default members to class.
@@ -178,24 +186,67 @@ class NetworkTopo(Topo):
   def create_topology(self):
     hGoodSender = self.addHost('hGS')
     hGoodReceiver = self.addHost('hGR')
+    
+    
 
-    hBadSender1 = self.addHost('hBS1')
-    hBadSender2 = self.addHost('hBS2')
-    hBadSender3 = self.addHost('hBS3')
+    #hBadSender1 = self.addHost('hBS1')
+    #hBadSender2 = self.addHost('hBS2')
+    #hBadSender3 = self.addHost('hBS3')
     hBadReceiver = self.addHost('hBR')
+    
 
     sS = self.addSwitch('s0')
     sR = self.addSwitch('s1')
+    #sC means switch cluster
+    sC = self.addSwitch('s3')
+    
+    for h in range(64):
+			host = self.addHost('hBS%s' % (h + 1))
+			self.addLink(host, sC, bw=self.host_bw/64)
 
     self.addLink(sS, sR, bw=self.switch_bw,
                          delay=self.switch_delay,
                          max_queue_size=math.ceil(self.queue_size / (1440.)))#why is 1440
     self.addLink(hGoodSender, sS, bw=self.host_bw)
     self.addLink(hGoodReceiver, sR, bw=self.host_bw)
-    self.addLink(hBadSender1, sS, bw=self.host_bw)
-    self.addLink(hBadSender2, sS, bw=self.host_bw)
-    self.addLink(hBadSender3, sS, bw=self.host_bw)
+    self.addLink(sC,sS,bw=self.switch_bw)
+    #self.addLink(hBadSender1, sS, bw=self.host_bw)
+    #self.addLink(hBadSender2, sS, bw=self.host_bw)
+    #self.addLink(hBadSender3, sS, bw=self.host_bw)
+    self.addLink(hBadReceiver, sR, bw=self.host_bw)'''
+
+class NetworkTopo(Topo):
+  def __init__(self, switch_bw, switch_delay, host_bw, queue_size):
+    # Add default members to class.
+    super(NetworkTopo, self).__init__()
+    self.switch_bw = switch_bw
+    self.host_bw = host_bw
+    self.switch_delay = switch_delay
+    self.queue_size = queue_size
+    self.create_topology()
+
+  def create_topology(self):
+
+    sS = self.addSwitch('s0')
+    sR = self.addSwitch('s1')
+    #sC means switch cluster
+    sC = self.addSwitch('s3')
+    
+    hGoodSender = self.addHost('hGS')
+    hGoodReceiver = self.addHost('hGR')   
+    hBadReceiver = self.addHost('hBR')   
+
+    self.addLink(sS, sR, bw=self.switch_bw,
+                         delay=self.switch_delay,
+                         max_queue_size=math.ceil(self.queue_size / (1440.)))#why is 1440
+    self.addLink(hGoodSender, sS, bw=self.host_bw)
+    self.addLink(hGoodReceiver, sR, bw=self.host_bw)
+    self.addLink(sC,sS,bw=self.switch_bw)
     self.addLink(hBadReceiver, sR, bw=self.host_bw)
+    for h in range(64):
+		host = self.addHost('hBS%s' % (h + 1))
+		self.addLink(host, sC, bw=self.host_bw/64)
+    
 
 def start_tcpprobe():
   "Install tcp_probe module and dump to file"
@@ -346,10 +397,11 @@ def calculate_throughput(iface, interval):
   b = get_txbytes(iface)
   return (8.0 * (b - a) / interval / 1024 / 1024)
 
-def run_udp1(net):
+def run_udp(net):
   start_receiver(net.getNodeByName('hBR'), False)
   return run_udp_interval (net.getNodeByName('hBS1'), net.getNodeByName('hBR'), args.burst, args.period)
 
+'''
 def run_udp2(net):
   #start_receiver(net.getNodeByName('hBR'), False)
   return run_udp_interval (net.getNodeByName('hBS2'), net.getNodeByName('hBR'), args.burst, args.period)
@@ -357,6 +409,7 @@ def run_udp2(net):
 def run_udp3(net):
   #start_receiver(net.getNodeByName('hBR'), False)
   return run_udp_interval (net.getNodeByName('hBS3'), net.getNodeByName('hBR'), args.burst, args.period)
+'''
   
 def run_tcp_normal(net,n):
 	start_receiver(net.getNodeByName('hBR'),True)
@@ -400,9 +453,10 @@ def run_tcp_first(net, n):
                          ])
     m.daemon=True
     m.start()
-    p1 = run_udp1(net)
-    p2 = run_udp2(net)
-    p3 = run_udp3(net)
+    start_receiver(net.getNodeByName('hBR'), False)
+    for i in range(64):
+		host=net.getNodeByName('hBS%s' % (i+1))
+		host.popen(['python', 'udp_send.py', net.getNodeByName('hBR').IP(), '5001', str(args.burst), str(args.period),str(args.rand_seed)] )	
    
 ###################################################################
 #    for i in range(0,10):
@@ -413,15 +467,12 @@ def run_tcp_first(net, n):
     throughput = calculate_throughput(iface, 30)
     cprint("TCP Throughput: %f Mbits\n" % (throughput, ), 'yellow')
     result=open("%s/throughput.txt" %(args.rootdir),'a+')
-    print>> result, "%s %s %s %s" %(args.period,args.burst,t,throughput)
+    print>> result, "%s %s %s %s %s" %(args.period,args.burst,t,throughput,args.rand_seed)
     result.close()
   except:
     raise
   finally:
     m.stop()
-    p1.kill()
-    p2.kill()
-    p3.kill()
     pcap.kill()
     monitor.terminate()
     stop_tcpprobe()
@@ -504,21 +555,23 @@ def test_http(net):
 
 def main():
   start = time()
-  '''topo = NetworkTopo(switch_bw=args.bw_net, host_bw=args.bw_host, switch_delay='%sms' %(args.delay, ), queue_size=23593)
+  '''
+  topo = NetworkTopo(switch_bw=args.bw_net, host_bw=args.bw_host, switch_delay='%sms' %(args.delay, ), queue_size=23593)
   net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
   net.start()
   dumpNodeConnections(net.hosts)
   net.pingAll()
-  run_tcp_first(net, args.tcp_n)
-  net.stop()'''
-
+  #run_tcp_first(net, args.tcp_n)
+  net.stop()
+  '''
   print "successful excuete"
   try:
     topo = NetworkTopo(switch_bw=args.bw_net, host_bw=args.bw_host, switch_delay='%sms' %(args.delay, ), queue_size=23593)
-    net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
+    #net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
+    net = Mininet(topo=topo,link=TCLink)
     net.start()
     dumpNodeConnections(net.hosts)
-    net.pingAll()
+    #net.pingAll()
     
     if args.http:
       test_http(net)
@@ -544,9 +597,9 @@ def main():
 
 if __name__ == '__main__':
   if args.debug:
-    lg.setLogLevel('info')
+    lg.setLogLevel('debug')
   else:
-    lg.setLogLevel('warning')
+    lg.setLogLevel('info')
   #main()
   try:
     main()
