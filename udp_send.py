@@ -9,6 +9,7 @@ UDP_IP = sys.argv[1]
 UDP_PORT = int(sys.argv[2])
 BURST = float(sys.argv[3])
 INTERVAL = float(sys.argv[4])
+RAND = float(sys.argv[5])
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -19,11 +20,13 @@ if False:
   while time() - start < 5:
     sock.sendto(MESSAGE, (UDP_IP, UDP_PORT))
 
-rate = 15 * 1024 * 1024/3.
+rate = (15 * 1024 * 1024)/64.
 sleep(0.9)
-next_start_time = time()
+start_time = time()
+rand_num=random.uniform(0,RAND)
 while True:
-  next_start_time += INTERVAL+random.uniform(0,0.3)
+  start_time+= INTERVAL
+  next_start_time = start_time+rand_num
   #next_start_time += BURST+ random.uniform(0,INTERVAL)
   start = time()
   bits = 0
