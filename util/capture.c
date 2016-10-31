@@ -125,14 +125,14 @@ main(int argc, char **argv)
         else
                 strcpy(filename, PCAP_SAVEFILE);
 
-		
+		/*
         if ((fp = fopen(filename,"w")) == NULL) {
                 fprintf(stderr,
                         "Error opening savefile \"%s\" for writing\n",
                         filename);
                 fclose(fp);
                 exit(7);
-        }
+        }*/
         //online reading
         /*if (!(p = pcap_open_live(ifname, BUFSIZ, promisc, to_ms, errbuf))) {
                 fprintf(stderr, "Error opening interface %s: %s\n",
